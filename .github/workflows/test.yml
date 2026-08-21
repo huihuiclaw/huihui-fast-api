@@ -1,0 +1,49 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Start service in background
+        env:
+          ADMOB_CLIENT_ID: ${{ secrets.ADMOB_CLIENT_ID }}
+          ADMOB_CLIENT_SECRET: ${{ secrets.ADMOB_CLIENT_SECRET }}
+          ADMOB_REFRESH_TOKEN: ${{ secrets.ADMOB_REFRESH_TOKEN }}
+          ADMOB_PUBLISHER_ID: ${{ secrets.ADMOB_PUBLISHER_ID }}
+        run: |
+          uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          sleep 3
+
+      - name: Smoke test endpoints
+        env:
+          ADMOB_CLIENT_ID: ${{ secrets.ADMOB_CLIENT_ID }}
+          ADMOB_CLIENT_SECRET: ${{ secrets.ADMOB_CLIENT_SECRET }}
+          ADMOB_REFRESH_TOKEN: ${{ secrets.ADMOB_REFRESH_TOKEN }}
+          ADMOB_PUBLISHER_ID: ${{ secrets.ADMOB_PUBLISHER_ID }}
+        run: |
+          curl -fsS http://127.0.0.1:8000/health
+          echo "---"
+          curl -fsS http://127.0.0.1:8000/ready
+          echo "---"
+          curl -fsS "http://127.0.0.1:8000/admob/earnings?days=7" | python -m json.tool
