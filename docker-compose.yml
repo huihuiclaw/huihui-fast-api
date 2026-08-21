@@ -9,6 +9,11 @@ services:
       - LOG_LEVEL=info
     env_file:
       - .env
+    # Force a public resolver — host's DNS in some networks intercepts
+    # Google API domains and returns unreachable IPs from the container.
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     volumes:
       - huihui-fast-api-state:/data
     restart: unless-stopped

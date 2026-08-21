@@ -59,9 +59,9 @@ class GmailCredentials:
         try:
             return cls(
                 client_id=os.environ["GMAIL_CLIENT_ID"],
-                client_secret=***"GMAIL_CLIENT_SECRET"],
-                refresh_token=***"GMAIL_REFRESH_TOKEN"],
-                access_token=***"GMAIL_ACCESS_TOKEN", ""),
+                client_secret=os.environ["GMAIL_CLIENT_SECRET"],
+                refresh_token=os.environ["GMAIL_REFRESH_TOKEN"],
+                access_token=os.environ.get("GMAIL_ACCESS_TOKEN", ""),
                 expiry_date_ms=int(os.environ.get("GMAIL_EXPIRY_DATE", "0")),
             )
         except KeyError as exc:
