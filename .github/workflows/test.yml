@@ -31,6 +31,11 @@ jobs:
           ADMOB_CLIENT_SECRET: ${{ secrets.ADMOB_CLIENT_SECRET }}
           ADMOB_REFRESH_TOKEN: ${{ secrets.ADMOB_REFRESH_TOKEN }}
           ADMOB_PUBLISHER_ID: ${{ secrets.ADMOB_PUBLISHER_ID }}
+          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+          FEEDBACK_GH_TOKEN: ${{ secrets.FEEDBACK_GH_TOKEN }}
+          TARGET_REPO: ${{ secrets.TARGET_REPO }}
         run: |
           uvicorn app.main:app --host 127.0.0.1 --port 8000 &
           sleep 3
@@ -41,9 +46,18 @@ jobs:
           ADMOB_CLIENT_SECRET: ${{ secrets.ADMOB_CLIENT_SECRET }}
           ADMOB_REFRESH_TOKEN: ${{ secrets.ADMOB_REFRESH_TOKEN }}
           ADMOB_PUBLISHER_ID: ${{ secrets.ADMOB_PUBLISHER_ID }}
+          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+          FEEDBACK_GH_TOKEN: ${{ secrets.FEEDBACK_GH_TOKEN }}
+          TARGET_REPO: ${{ secrets.TARGET_REPO }}
         run: |
           curl -fsS http://127.0.0.1:8000/health
           echo "---"
           curl -fsS http://127.0.0.1:8000/ready
           echo "---"
           curl -fsS "http://127.0.0.1:8000/admob/earnings?days=7" | python -m json.tool
+          echo "---"
+          curl -fsS "http://127.0.0.1:8000/gmail/feedback?max=5" | python -m json.tool
+          echo "---"
+          curl -fsS "http://127.0.0.1:8000/gmail/feedback/state" | python -m json.tool

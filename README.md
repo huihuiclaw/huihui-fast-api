@@ -50,13 +50,17 @@ The service will be available at <http://localhost:8000>.
 
 ## Endpoints
 
-| Method | Path             | Purpose                                |
-| ------ | ---------------- | -------------------------------------- |
-| GET    | `/`              | Friendly hello                         |
-| GET    | `/health`        | Liveness probe                         |
-| GET    | `/ready`         | Readiness probe with app metadata       |
-| GET    | `/admob/earnings`| AdMob earnings (default 7 days, max 90)|
-| GET    | `/docs`          | Swagger UI (auto-generated)            |
+| Method | Path                          | Purpose                                  |
+| ------ | ----------------------------- | ---------------------------------------- |
+| GET    | `/`                           | Friendly hello                           |
+| GET    | `/health`                     | Liveness probe                           |
+| GET    | `/ready`                      | Readiness probe with app metadata        |
+| GET    | `/admob/earnings`             | AdMob earnings (default 7 days, max 90)  |
+| GET    | `/gmail/feedback`             | Dry-run: scan inbox, report new feedback |
+| POST   | `/gmail/feedback/sync`        | Scan inbox + create GitHub Issues        |
+| GET    | `/gmail/feedback/state`       | Show processed-email memory              |
+| POST   | `/gmail/feedback/reset`       | Clear processed-email memory             |
+| GET    | `/docs`                       | Swagger UI (auto-generated)              |
 
 ### `GET /admob/earnings?days=N`
 
@@ -73,22 +77,65 @@ Returns per-day rows plus totals:
 }
 ```
 
+### `GET /gmail/feedback?max=30`
+
+Dry-run. Scans the inbox, classifies each email, and reports what *would* be
+created as a GitHub Issue. Never touches GitHub.
+
+### `POST /gmail/feedback/sync?max=30`
+
+Same as above, but actually creates `user-feedback`-labeled issues for any new
+user feedback. Skips emails that already have an open issue with the same title.
+
+Response shape (truncated):
+
+```json
+{
+  "scanned": 30,
+  "new": 2,
+  "skipped_seen": 24,
+  "skipped_system": 3,
+  "skipped_existing_issue": 1,
+  "created": [
+    {"email_id": "…", "subject": "…", "issue_number": 60, "issue_url": "…"}
+  ],
+  "errors": [],
+  "last_sync_at": "2026-08-21T12:00:00+00:00",
+  "dry_run": false
+}
+```
+
+### `POST /gmail/feedback/reset`
+
+Wipes the persisted `seenEmailIds` so the next sync re-processes everything
+(useful after changing the query or testing).
+
 ## Secrets
 
-The AdMob client reads from environment variables. In production these are stored
-as GitHub Secrets; locally they live in `.env` (git-ignored).
+The AdMob and Gmail clients read from environment variables. In production
+these are stored as GitHub Secrets; locally they live in `.env` (git-ignored).
 
-| Variable             | Source                       |
-| -------------------- | ---------------------------- |
-| `ADMOB_CLIENT_ID`    | Google Cloud OAuth client    |
-| `ADMOB_CLIENT_SECRET`| Google Cloud OAuth client    |
-| `ADMOB_REFRESH_TOKEN`| AdMob OAuth grant            |
-| `ADMOB_PUBLISHER_ID` | AdMob account id             |
-| `ADMOB_ACCESS_TOKEN` | (optional) cached token      |
-| `ADMOB_EXPIRY_DATE`  | (optional) ms since epoch    |
+| Variable                | Source                                  |
+| ----------------------- | --------------------------------------- |
+| `ADMOB_CLIENT_ID`       | Google Cloud OAuth client               |
+| `ADMOB_CLIENT_SECRET`   | Google Cloud OAuth client               |
+| `ADMOB_REFRESH_TOKEN`   | AdMob OAuth grant                       |
+| `ADMOB_PUBLISHER_ID`    | AdMob account id                        |
+| `ADMOB_ACCESS_TOKEN`    | (optional) cached token                 |
+| `ADMOB_EXPIRY_DATE`     | (optional) ms since epoch               |
+| `GMAIL_CLIENT_ID`       | Gmail OAuth client (defaults to AdMob)  |
+| `GMAIL_CLIENT_SECRET`   | Gmail OAuth client (defaults to AdMob)  |
+| `GMAIL_REFRESH_TOKEN`   | Gmail OAuth grant                       |
+| `GMAIL_STATE_PATH`      | Where to persist processed email ids    |
+| `GMAIL_DEFAULT_QUERY`   | Default Gmail search query              |
+| `GITHUB_TOKEN`          | PAT with `repo` scope                   |
+| `GITHUB_REPO`           | `owner/name` target repo                |
 
-The client refreshes `ADMOB_ACCESS_TOKEN` automatically ~5 minutes before
-expiry using the refresh token + client credentials.
+Both clients refresh their `ACCESS_TOKEN` automatically ~5 minutes before expiry
+using the refresh token + client credentials.
+
+The `/gmail/feedback` state file is persisted in a docker volume
+(`huihui-fast-api-state:/data`) so it survives container restarts.
 
 ## CI
 
