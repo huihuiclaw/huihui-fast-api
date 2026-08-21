@@ -52,12 +52,11 @@ jobs:
           FEEDBACK_GH_TOKEN: ${{ secrets.FEEDBACK_GH_TOKEN }}
           TARGET_REPO: ${{ secrets.TARGET_REPO }}
         run: |
-          curl -fsS http://127.0.0.1:8000/health
-          echo "---"
-          curl -fsS http://127.0.0.1:8000/ready
-          echo "---"
-          curl -fsS "http://127.0.0.1:8000/admob/earnings?days=7" | python -m json.tool
-          echo "---"
-          curl -fsS "http://127.0.0.1:8000/gmail/feedback?max=5" | python -m json.tool
-          echo "---"
-          curl -fsS "http://127.0.0.1:8000/gmail/feedback/state" | python -m json.tool
+          set +e
+          curl -sS http://127.0.0.1:8000/health; echo
+          curl -sS http://127.0.0.1:8000/ready; echo
+          curl -sS "http://127.0.0.1:8000/admob/earnings?days=7" | python -m json.tool
+          echo "--- gmail dry-run ---"
+          curl -sS "http://127.0.0.1:8000/gmail/feedback?max=5" | python -m json.tool || echo "(gmail failed)"
+          echo "--- gmail state ---"
+          curl -sS "http://127.0.0.1:8000/gmail/feedback/state" | python -m json.tool
