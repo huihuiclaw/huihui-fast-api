@@ -37,6 +37,10 @@ jobs:
           FEEDBACK_GH_TOKEN: ${{ secrets.FEEDBACK_GH_TOKEN }}
           TARGET_REPO: ${{ secrets.TARGET_REPO }}
         run: |
+          # /gmail/feedback writes state to /data — create it as the runner user
+          # since CI runs uvicorn directly (not inside the Docker image).
+          sudo mkdir -p /data
+          sudo chown "$(id -u):$(id -g)" /data
           python -u -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --log-level info > /tmp/uvicorn.log 2>&1 &
           echo "uvicorn pid=$!"
           sleep 4
